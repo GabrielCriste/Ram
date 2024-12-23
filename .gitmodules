@@ -1,0 +1,3 @@
+[submodule "storch"]
+	path = storch
+	url = git@github.com:sbrunk/storch.git
