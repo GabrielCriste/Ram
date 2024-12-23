@@ -1,12 +1,12 @@
-# Definir a imagem base
+# Use a base image with Jupyter environment
 FROM quay.io/jupyter/base-notebook:2024-12-02
 
-# Definir o usuário como root para permitir a instalação de pacotes
+# Switch to root to install necessary packages
 USER root
 
-# Atualizar pacotes e instalar dependências necessárias
-RUN apt-get -y update && \
-    apt-get -y install \
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y \
     dbus-x11 \
     xclip \
     xfce4 \
@@ -15,37 +15,20 @@ RUN apt-get -y update && \
     xfce4-settings \
     xorg \
     xubuntu-icon-theme \
-    fonts-dejavu && \
-    apt-get -y remove xfce4-screensaver && \
-    mkdir -p /opt/install && \
-    chown -R $NB_UID:$NB_GID $HOME /opt/install && \
-    rm -rf /var/lib/apt/lists/*
+    fonts-dejavu \
+    && apt-get remove -y xfce4-screensaver \
+    && mkdir -p /opt/install \
+    && chown -R $NB_UID:$NB_GID $HOME /opt/install \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar qualquer outro pacote ou dependência necessária
-RUN apt-get -y install \
-    python3-pip \
-    python3-dev \
-    build-essential
+# Set environment variables for Jupyter and user
+ENV JUPYTER_ENABLE_LAB=yes
 
-# Instalar Python dependências (se necessário)
-RUN pip3 install --upgrade pip && \
-    pip3 install \
-    numpy \
-    pandas \
-    matplotlib \
-    jupyterlab \
-    # Adicione aqui outros pacotes Python necessários
-    && rm -rf /root/.cache
+# Switch back to the default jupyter user
+USER $NB_UID
 
-# Alterar o diretório de trabalho para /home/jovyan
-WORKDIR /home/jovyan
-
-# Copiar arquivos do repositório (se necessário)
-# COPY . /home/jovyan/
-
-# Expor a porta do Jupyter
+# Expose the Jupyter port
 EXPOSE 8888
 
-# Configurar comando para iniciar o Jupyter
+# Start Jupyter Notebook when the container starts
 CMD ["start-notebook.sh"]
-
