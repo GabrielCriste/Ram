@@ -1,58 +1,51 @@
+# Definir a imagem base
 FROM quay.io/jupyter/base-notebook:2024-12-02
 
+# Definir o usuário como root para permitir a instalação de pacotes
 USER root
 
-# Instalação de dependências
-RUN apt-get -y -qq update \
- && apt-get -y -qq install \
-        dbus-x11 \
-        xclip \
-        xfce4 \
-        xfce4-panel \
-        xfce4-session \
-        xfce4-settings \
-        xorg \
-        xubuntu-icon-theme \
-        fonts-dejavu \
- && apt-get -y -qq remove xfce4-screensaver \
- && mkdir -p /opt/install \
- && chown -R $NB_UID:$NB_GID $HOME /opt/install \
- && rm -rf /var/lib/apt/lists/*
+# Atualizar pacotes e instalar dependências necessárias
+RUN apt-get -y update && \
+    apt-get -y install \
+    dbus-x11 \
+    xclip \
+    xfce4 \
+    xfce4-panel \
+    xfce4-session \
+    xfce4-settings \
+    xorg \
+    xubuntu-icon-theme \
+    fonts-dejavu && \
+    apt-get -y remove xfce4-screensaver && \
+    mkdir -p /opt/install && \
+    chown -R $NB_UID:$NB_GID $HOME /opt/install && \
+    rm -rf /var/lib/apt/lists/*
 
-# Instalar o servidor VNC (TigerVNC ou TurboVNC)
-ARG vncserver=tigervnc
-RUN if [ "${vncserver}" = "tigervnc" ]; then \
-        echo "Installing TigerVNC"; \
-        apt-get -y -qq update; \
-        apt-get -y -qq install tigervnc-standalone-server; \
-        rm -rf /var/lib/apt/lists/*; \
-    fi
+# Instalar qualquer outro pacote ou dependência necessária
+RUN apt-get -y install \
+    python3-pip \
+    python3-dev \
+    build-essential
 
-ENV PATH=/opt/TurboVNC/bin:$PATH
-RUN if [ "${vncserver}" = "turbovnc" ]; then \
-        echo "Installing TurboVNC"; \
-        wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
-        gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg; \
-        wget -O /etc/apt/sources.list.d/TurboVNC.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list; \
-        apt-get -y -qq update; \
-        apt-get -y -qq install turbovnc; \
-        rm -rf /var/lib/apt/lists/*; \
-    fi
+# Instalar Python dependências (se necessário)
+RUN pip3 install --upgrade pip && \
+    pip3 install \
+    numpy \
+    pandas \
+    matplotlib \
+    jupyterlab \
+    # Adicione aqui outros pacotes Python necessários
+    && rm -rf /root/.cache
 
-USER $NB_USER
+# Alterar o diretório de trabalho para /home/jovyan
+WORKDIR /home/jovyan
 
-# Copiar o arquivo environment.yml e instalar o ambiente Conda
-COPY --chown=$NB_UID:$NB_GID environment.yml /tmp
-RUN . /opt/conda/bin/activate && \
-    mamba env update --quiet --file /tmp/environment.yml
+# Copiar arquivos do repositório (se necessário)
+# COPY . /home/jovyan/
 
-# Garantir que o submódulo 'storch' seja copiado para a imagem
-# Copiar os arquivos de instalação e o submódulo para o diretório de instalação
-COPY --chown=$NB_UID:$NB_GID . /opt/install
-RUN . /opt/conda/bin/activate && \
-    mamba install -y -q "nodejs>=22" && \
-    pip install --no-deps /opt/install
+# Expor a porta do Jupyter
+EXPOSE 8888
 
-# Certifique-se de que o submódulo 'storch' seja corretamente configurado
-RUN cd /tmp/repo2dockerylaiwo5r && git submodule update --init --recursive
+# Configurar comando para iniciar o Jupyter
+CMD ["start-notebook.sh"]
 
