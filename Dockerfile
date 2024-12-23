@@ -2,6 +2,7 @@ FROM quay.io/jupyter/base-notebook:2024-12-02
 
 USER root
 
+# Instalação de dependências
 RUN apt-get -y -qq update \
  && apt-get -y -qq install \
         dbus-x11 \
@@ -45,9 +46,13 @@ COPY --chown=$NB_UID:$NB_GID environment.yml /tmp
 RUN . /opt/conda/bin/activate && \
     mamba env update --quiet --file /tmp/environment.yml
 
-# Copiar arquivos de instalação e instalar dependências
+# Garantir que o submódulo 'storch' seja copiado para a imagem
+# Copiar os arquivos de instalação e o submódulo para o diretório de instalação
 COPY --chown=$NB_UID:$NB_GID . /opt/install
 RUN . /opt/conda/bin/activate && \
     mamba install -y -q "nodejs>=22" && \
     pip install --no-deps /opt/install
-    
+
+# Certifique-se de que o submódulo 'storch' seja corretamente configurado
+RUN cd /tmp/repo2dockerylaiwo5r && git submodule update --init --recursive
+
