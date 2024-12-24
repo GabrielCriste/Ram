@@ -1,3 +1,4 @@
 [submodule "subdiretorio"]
-	path = subdiretorio
-	url = https://github.com/GabrielCriste/Ram.git
+    path = subdiretorio
+    url = https://github.com/GabrielCriste/Ram.git
+
